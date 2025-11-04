@@ -1,0 +1,265 @@
+# **Run and Conquer – Software Specification Document (NoSQL Version, Zone-Based)**
+
+**Project:** Run and Conquer
+**Type:** GPS-based competitive running game
+**Platform:** iOS & Android (mobile app), backend server for game logic and data
+
+---
+
+## 1️⃣ Overview
+
+**Purpose:**
+Run and Conquer gamifies city running. Users are automatically assigned to one of four houses based on personality. As they run, they capture and defend **city zones** for their house. The app tracks territory, flags, and house leaderboards.
+
+**Goals:**
+
+* Engage runners in competitive and collaborative play
+* Encourage exploration of new routes
+* Maintain balanced and fair gameplay
+* Ensure privacy and security of location data
+* Plan for future visualization of **road-level activity**
+
+---
+
+## 2️⃣ Core Features
+
+1. **House Assignment**
+
+   * Automatic based on personality quiz
+   * Balanced distribution across 4 houses
+
+2. **Map & Territory**
+
+   * **Zone-based:** GPS-tracked runs are aggregated into city **hexagonal zones** (H3)
+   * Zones owned by houses based on cumulative activity
+   * **Future version:** Optional road-level visualization overlay to show activity intensity by street
+
+3. **Gameplay Loop**
+
+   * Run → Contribute to house → Capture territory → Track leaderboard
+
+4. **User Profiles**
+
+   * House affiliation
+   * Personal stats (distance, flags captured, zones contributed)
+   * Badges/achievements
+
+5. **Leaderboards**
+
+   * House ranking by total territory
+   * Individual contributions optionally displayed
+
+6. **Privacy & Security**
+
+   * Aggregated location tracking
+   * Encrypted storage
+   * User control over visibility
+
+---
+
+## 3️⃣ Technology Stack
+
+**Frontend (Mobile App):**
+
+* **React Native** (cross-platform iOS/Android)
+* **Expo** for development/testing
+* **Map Library:** Mapbox or Google Maps SDK
+* **State Management:** Redux or Zustand
+
+**Backend:**
+
+* **Node.js + Express** for REST API / GraphQL server
+* **Database:** MongoDB (core game data, geospatial queries)
+* **Optional SQL:** PostgreSQL for authentication / transactional data
+* **Authentication:** JWT-based token authentication
+* **Real-time updates:** WebSockets (Socket.io) or MongoDB change streams
+
+**Optional Enhancements:**
+
+* **Cloud Hosting:** AWS / Google Cloud / Vercel
+* **Push Notifications:** Firebase Cloud Messaging (FCM)
+* **Analytics:** Mixpanel or Firebase Analytics
+
+---
+
+## 4️⃣ Architecture Overview
+
+```
+Mobile App <-> REST API / GraphQL <-> MongoDB (game data)
+             \
+              -> WebSocket Server (real-time zone updates)
+```
+
+**Data Flow:**
+
+1. User signs up → personality quiz → house assignment
+2. GPS tracking starts → data sent to backend in real-time
+3. Backend aggregates runs into **zones** → updates house ownership
+4. Zone ownership updates pushed via WebSocket
+5. Leaderboards updated periodically
+
+**Future Scalability:**
+
+* Ability to calculate and visualize **road-level activity** for each street (heatmaps by house color) without changing the zone-based scoring logic.
+
+---
+
+## 5️⃣ Database & Data Structures (NoSQL)
+
+### Users Collection
+
+```json
+{
+  "_id": "uuid",
+  "username": "Runner01",
+  "house": "Blaze",
+  "total_distance": 125.5,
+  "total_flags": 8,
+  "joined_at": "2025-10-28T10:00:00Z",
+  "last_active": "2025-10-28T12:00:00Z"
+}
+```
+
+### Houses Collection
+
+```json
+{
+  "_id": "house_blaze",
+  "name": "Blaze",
+  "color": "#FF4500",
+  "total_territory": 1200.5,
+  "total_flags": 45
+}
+```
+
+### Zones Collection (Hex Grid)
+
+```json
+{
+  "_id": "zone_123",
+  "geo_hex": "abcd1234",       
+  "owner_house": "Terra",
+  "total_distance_by_house": {
+    "Blaze": 120.3,
+    "Terra": 200.5,
+    "Aero": 50.0,
+    "Luna": 75.0
+  },
+  "flags": {
+    "Blaze": 2,
+    "Terra": 1,
+    "Aero": 0,
+    "Luna": 1
+  },
+  "last_updated": "2025-10-28T11:00:00Z"
+}
+```
+
+### Runs Collection
+
+```json
+{
+  "_id": "run_789",
+  "user_id": "uuid",
+  "start_time": "2025-10-28T07:30:00Z",
+  "end_time": "2025-10-28T08:00:00Z",
+  "distance": 5.3,
+  "zones_contributed": ["zone_123", "zone_124"],
+  "path": [
+    { "lat": -37.81, "lng": 144.96 },
+    { "lat": -37.82, "lng": 144.97 }
+  ]
+}
+```
+
+---
+
+## 6️⃣ Key Algorithms
+
+1. **House Assignment**
+
+   * Personality quiz → scoring for each house
+   * Assign to house with highest compatible score
+   * Balance check → assign next-best if house full
+
+2. **Zone Ownership Update**
+
+   * For each run, increment `total_distance_by_house` in relevant zones
+   * Owner = house with max total_distance
+
+3. **Flag Capture (Future Feature)**
+
+   * Runs through enemy zone flags → mark as captured
+   * Update house scores → notifications
+
+4. **Road-Level Visualization (Planned)**
+
+   * Aggregate runs along streets → assign intensity by house color
+   * Only for visualization, **not for scoring or ownership**
+   * Optional heatmap overlay for engagement
+
+---
+
+## 7️⃣ Privacy & Security Guidelines
+
+* **Location:** Aggregate into zones; exact paths stored temporarily
+* **Data Storage:** Encrypted at rest & in transit
+* **Authentication:** JWT or OAuth
+* **Consent & Visibility:** Users control who sees contributions
+* **Legal Compliance:** GDPR / Australian Privacy Act
+
+---
+
+## 8️⃣ App Structure
+
+**Screens / Modules:**
+
+1. **Onboarding:** Personality quiz → house assignment
+2. **Home Map:** Map of zones; house ownership; nearby flags
+3. **Run Tracker:** GPS tracking → contribution to zones
+4. **Profile:** Stats, house info, badges
+5. **Leaderboard:** House ranking, individual contribution
+
+**Components:**
+
+* MapView / ZoneOverlay (hex colors for ownership)
+* RunButton / Pause / Stop
+* Notifications / Alerts
+* Badge / Achievement UI
+* Future: Road heatmap overlay
+
+---
+
+## 9️⃣ APIs (Basic Examples)
+
+| Endpoint          | Method | Description                |
+| ----------------- | ------ | -------------------------- |
+| /signup           | POST   | Create user + assign house |
+| /login            | POST   | Authenticate user          |
+| /runs             | POST   | Submit run data            |
+| /zones            | GET    | Fetch map + zone ownership |
+| /leaderboard      | GET    | Fetch house rankings       |
+| /profile/:user_id | GET    | Fetch user stats           |
+
+---
+
+## 🔟 Additional Considerations
+
+* **Scalability:**
+
+  * Hex grid zones with geo queries in MongoDB
+  * Future: road-level visualization for streets
+* **Real-time Updates:** WebSockets or MongoDB change streams
+* **Offline Runs:** Cache GPS locally → sync later
+* **Analytics:** Track engagement, popular zones, average distances
+* **Gamification:** Badges, streaks, weekly events
+
+---
+
+✅ **Outcome:**
+This document provides engineers a **complete roadmap**:
+
+* Zone-based gameplay (hex grid) for scalable scoring
+* Future ability to visualize road-level activity
+* Database, backend, and frontend structure
+* API endpoints and privacy/security considerations
