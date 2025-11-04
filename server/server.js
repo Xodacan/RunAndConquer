@@ -20,6 +20,12 @@ app.get( "/health", async(req, res) => {
       }
 });
 
+app.get( "/api/auth", () => {});
+app.get( "/api/zones", () => {});
+app.get( "/api/runs", () => {});
+app.get( "/api/leaderbaord", () => {});
+app.get( "/api/profile", () => {});
+
 app.listen(PORT, () => {
     try{
         console.log(`API server running on http://localhost:${PORT}`);
