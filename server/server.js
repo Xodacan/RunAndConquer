@@ -1,4 +1,4 @@
-import cors from 'cors';
+import { clerkMiddleware, requireAuth } from '@clerk/express';
 import 'dotenv/config';
 import express from 'express';
 import connectDB from './config/database.js';
@@ -10,7 +10,7 @@ const PORT = process.env.PORT;
 
 connectDB();
 
-app.use(cors());
+app.use(clerkMiddleware());
 
 app.get( "/health", async(req, res) => {
     try {
@@ -24,7 +24,7 @@ app.get( "/api/auth", () => {});
 app.get( "/api/zones", () => {});
 app.get( "/api/runs", () => {});
 app.get( "/api/leaderbaord", () => {});
-app.get( "/api/profile", () => {});
+app.get( "/api/runner", requireAuth() ,(req, res) => {});
 
 app.listen(PORT, () => {
     try{

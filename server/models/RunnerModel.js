@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 export const runnerSchema = new mongoose.Schema(
 {
-    _id: { type: String, unique: true },
+    Id: { type: String, unique: true },
     username: { type: String, required: true , unique: true },
     email: {type: String, required: true},
     phoneNumber: { type: String },
